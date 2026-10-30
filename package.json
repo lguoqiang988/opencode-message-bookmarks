@@ -1,0 +1,30 @@
+{
+  "name": "opencode-collapse-user-messages",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Collapse the user's messages to a thin line in OpenCode Desktop and reveal them on hover.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./gui-experimental": "./dist/gui-experimental.cjs"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.2.3"
+  },
+  "devDependencies": {
+    "effect": "^4.0.6",
+    "solid-js": "^1.9.18",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vite-plugin-solid": "^2.11.15"
+  }
+}
