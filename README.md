@@ -1,4 +1,4 @@
-# opencode-collapse-user-messages
+# opencode-message-bookmarks
 
 在 OpenCode 桌面端会话右侧加一条**消息书签栏**（类似 WorkBuddy）：每条你发送的消息对应一根小横线，
 鼠标移上去展开消息列表，点一下就能跳到那条消息。
@@ -18,7 +18,7 @@
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["D:/OpenCode/plugins/opencode-collapse-user-messages"],
+  "plugins": ["E:/Projects/GitHub/OpenCode-Plugins/message-bookmarks"],
 }
 ```
 

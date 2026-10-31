@@ -1,9 +1,9 @@
 {
-  "name": "opencode-collapse-user-messages",
+  "name": "opencode-message-bookmarks",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Collapse the user's messages to a thin line in OpenCode Desktop and reveal them on hover.",
+  "description": "A bookmark rail beside the OpenCode Desktop conversation: hover a dash to read a message, click to jump to it.",
   "exports": {
     ".": "./src/index.ts",
     "./gui-experimental": "./dist/gui-experimental.cjs"
