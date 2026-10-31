@@ -1,7 +1,7 @@
 import { Command, Plugin, Slot, Style } from "@opencode/plugin/gui"
 import css from "./rail.css?inline"
 import { definition } from "./definition"
-import { RailSlot } from "./rail"
+import { RailWindow } from "./rail"
 
 export default Plugin.define({
   ...definition,
@@ -10,10 +10,12 @@ export default Plugin.define({
 
     ctx.add(Style, css)
 
+    // `window.bottom` is always rendered, also in the narrow layout where the session header is
+    // replaced by the tab strip. The rail positions itself on the timeline it finds.
     ctx.add(Slot, {
-      at: "session.header",
+      at: "window.bottom",
       order: 100,
-      render: (input) => <RailSlot session={input.session} active={input.active} />,
+      render: () => <RailWindow />,
     })
 
     ctx.add(Command, () => ({

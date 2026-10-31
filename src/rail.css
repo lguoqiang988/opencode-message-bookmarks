@@ -1,6 +1,6 @@
 .oc-rail {
   position: fixed;
-  z-index: 40;
+  z-index: 200;
   width: 24px;
   display: flex;
   flex-direction: column;
@@ -61,7 +61,6 @@
   background: var(--v2-background-bg-layer-02);
   border: 0.5px solid var(--v2-border-border-base);
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
 }
 
 .oc-rail-list {
@@ -115,10 +114,4 @@
 
 .oc-rail-item[data-current]::after {
   opacity: 0.8;
-}
-
-@media (max-width: 900px) {
-  .oc-rail {
-    display: none;
-  }
 }

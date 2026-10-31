@@ -9,28 +9,49 @@ function preview(text: string): string {
   return flat.length > 160 ? flat.slice(0, 160) + "…" : flat
 }
 
-/** Renders the rail beside the timeline that owns this header. */
-export function RailSlot(props: { session: { id: string }; active: boolean }) {
+/** Renders the rail beside the timeline of the routed session. */
+export function RailWindow() {
   const ctx = usePlugin<typeof definition>()
-  const [host, setHost] = createSignal<HTMLSpanElement>()
-  const [scroller, setScroller] = createSignal<HTMLElement>()
+  const [target, setTarget] = createSignal<{ sessionID: string; scroller: HTMLElement }>()
+
+  const resolve = () => {
+    const current = ctx.sessions.current()
+    if (!current) {
+      setTarget(undefined)
+      return
+    }
+
+    const scroller = scrollerFor(null)
+    if (!scroller) {
+      setTarget(undefined)
+      return
+    }
+
+    const previous = target()
+    if (previous && previous.sessionID === current.id && previous.scroller === scroller) return
+    setTarget({ sessionID: current.id, scroller })
+  }
+
+  createEffect(() => {
+    void ctx.sessions.current()?.id
+    resolve()
+  })
 
   onMount(() => {
-    const found = scrollerFor(host())
-    if (found) setScroller(found)
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible" && !target()) resolve()
+    }, 2000)
+    onCleanup(() => window.clearInterval(timer))
   })
 
   return (
-    <>
-      <span ref={setHost} style={{ display: "none" }} />
-      <Show when={props.active && ctx.stores.prefs.value.rail ? scroller() : undefined}>
-        {(target) => <Rail session={props.session} scroller={target()} />}
-      </Show>
-    </>
+    <Show when={ctx.stores.prefs.value.rail ? target() : undefined}>
+      {(value) => <Rail sessionID={value().sessionID} scroller={value().scroller} />}
+    </Show>
   )
 }
 
-function Rail(props: { session: { id: string }; scroller: HTMLElement }) {
+function Rail(props: { sessionID: string; scroller: HTMLElement }) {
   const ctx = usePlugin<typeof definition>()
 
   const [items, setItems] = createSignal<UserMessage[]>([])
@@ -108,13 +129,25 @@ function Rail(props: { session: { id: string }; scroller: HTMLElement }) {
   const jump = async (at: number) => {
     const message = items()[at]
     if (!message) return
-    setOpen(false)
-    setHover(-1)
+    close()
     if (await revealMessage((id) => ctx.commands.run(id), props.scroller, index(), message.id)) setActive(at)
   }
 
+  const focusComposer = () => {
+    const composer = ctx.screen.current()?.composer
+    if (composer) composer.focus()
+  }
+
+  const close = () => {
+    if (!open()) return
+    setOpen(false)
+    setHover(-1)
+    setReady(false)
+    window.setTimeout(focusComposer, 0)
+  }
+
   createEffect(() => {
-    void load(props.session.id)
+    void load(props.sessionID)
   })
 
   createEffect(() => {
@@ -124,7 +157,7 @@ function Rail(props: { session: { id: string }; scroller: HTMLElement }) {
       return
     }
     measure()
-    requestAnimationFrame(() => {
+    window.setTimeout(() => {
       const host = rail
       const track = marks
       const card = panel
@@ -138,6 +171,7 @@ function Rail(props: { session: { id: string }; scroller: HTMLElement }) {
       const max = Math.max(0, hostRect.height - height)
       setPanelTop(Math.round(Math.max(0, Math.min(center - height / 2, max))))
       setReady(true)
+      window.setTimeout(() => card.focus({ preventScroll: true }), 0)
 
       const row = list?.children[at]
       if (list && row instanceof HTMLElement) {
@@ -146,7 +180,7 @@ function Rail(props: { session: { id: string }; scroller: HTMLElement }) {
         if (top < list.scrollTop) list.scrollTop = top
         else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight
       }
-    })
+    }, 0)
   })
 
   onMount(() => {
@@ -171,7 +205,7 @@ function Rail(props: { session: { id: string }; scroller: HTMLElement }) {
     props.scroller.addEventListener("scroll", scroll, { passive: true })
 
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") void load(props.session.id)
+      if (document.visibilityState === "visible") void load(props.sessionID)
     }, 8000)
 
     const layout = window.setInterval(() => {
@@ -194,8 +228,7 @@ function Rail(props: { session: { id: string }; scroller: HTMLElement }) {
         ref={(element) => (rail = element)}
         style={{ top: `${box().top}px`, right: `${box().right}px`, height: `${box().height}px` }}
         onMouseLeave={() => {
-          setOpen(false)
-          setHover(-1)
+          close()
         }}
       >
         <div class="oc-rail-marks" ref={(element) => (marks = element)}>
@@ -222,7 +255,32 @@ function Rail(props: { session: { id: string }; scroller: HTMLElement }) {
           <div
             class="oc-rail-panel"
             ref={(element) => (panel = element)}
-            style={{ top: `${panelTop()}px`, visibility: ready() ? "visible" : "hidden" }}
+            tabIndex={-1}
+            style={{
+              top: `${panelTop()}px`,
+              right: `${4 - box().right}px`,
+              visibility: ready() ? "visible" : "hidden",
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault()
+                event.stopPropagation()
+                close()
+                return
+              }
+              if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault()
+                event.stopPropagation()
+                const next = hover() + (event.key === "ArrowDown" ? 1 : -1)
+                setHover(Math.min(items().length - 1, Math.max(0, next)))
+                return
+              }
+              if (event.key === "Enter") {
+                event.preventDefault()
+                event.stopPropagation()
+                void jump(hover())
+              }
+            }}
           >
             <div class="oc-rail-list" ref={(element) => (list = element)}>
               <For each={items()}>
